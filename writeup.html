@@ -1,0 +1,92 @@
+[WARNING] This document format requires a nonempty <title> element.
+  Please specify either 'title' or 'pagetitle' in the metadata.
+  Falling back to 'Untitled'
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Untitled</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<h2 id="writeup">Writeup</h2>
+<hr />
+<p><strong>MPC Project</strong></p>
+<p>The goals / steps of this project are the following: * Implement Model Predicted Controller in C++. * Tune timestep length, elapsed duration and cost fuction to go around the lake in project simulator as fast as possible. * Write how I tune each parameter.</p>
+<h4 id="rubric"><a href="https://review.udacity.com/#!/rubrics/896/view">Rubric</a></h4>
+<h3 id="here-i-will-consider-the-rubric-points-individually-and-describe-how-i-addressed-each-point-in-my-implementation.">Here I will consider the rubric points individually and describe how I addressed each point in my implementation.</h3>
+<hr />
+<h3 id="discussion">Discussion</h3>
+<p>I implemented the model predicted controller using the udacity provided template. Some variables are added so that I can see the detail of the cost function.</p>
+<h4 id="here-i-briefly-discuss-how-each-parameter-affect-the-motion-of-the-car-in-simulation.">1. Here I briefly discuss how each parameter affect the motion of the car in simulation.</h4>
+<p>There are 10 parameters I tuned. First of all, I explain the influence of timestep length N, elapsed duration and target speed(MPC.cpp line 9-10 and main.cpp line 91-92). Timestep length is the value how important you think the future value is. If it is too low, you only take into acount the small time in the future. So it cannot deal with the sharp curve. On the other hand, if it is too high, you takes into account the long time. Normally, it looks good things. However, when the timestep length is too much, it is not so precise (because there are some unmodeled dynamics) that the prediction result is no longer reliable. Also, elapsed duration influences the model accuracy and computation time. If it is too low, the computation time increses and model can only take into account. On the other hand, if it is too high, the model is no longer precise because of finite difference approximation. Finally, target speed means as it is. Next, I explain cost function. Cost function has three parts. First, cross track error , direction error and the speed error penalize the position, direction and speed error of car. Second, the costs of steering and throttle penalize the amount of control. It is good for energy consumption. Third, the change of steering and throttle weight penalize the rapid change of control. It makes controller more stable. By tuning all the parmter I mentioned, my controller makes the car go around much faster than PID control project.</p>
+<h4 id="here-i-briefly-discuss-how-i-deal-with-the-latency.">2. Here I briefly discuss how I deal with the latency.</h4>
+<p>I deal with latency in main.cpp 141-150 lines. First, I get current state. Next, I predict the state 0.1s later from the current state. 0.1s is the time where the control is executed. Then, I solve the optimization problem. So since the model takes into accout the latency, its result becomes well.</p>
+<h4 id="here-i-briefly-discuss-how-i-tune-each-parameter.">3. Here I briefly discuss how I tune each parameter.</h4>
+<p>This is the final parameters I have tuned.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Parameters</th>
+<th style="text-align: center;">Values</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Timestep length N</td>
+<td style="text-align: center;">14</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Elapsed duration dt</td>
+<td style="text-align: center;">0.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Target speed</td>
+<td style="text-align: center;">90.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">CTE weight</td>
+<td style="text-align: center;">1300</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Direction error weight</td>
+<td style="text-align: center;">45000</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Speed error weight</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Steering control weight</td>
+<td style="text-align: center;">1000</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Throttle control weight</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Change of steering control weight</td>
+<td style="text-align: center;">10000000</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Change of steering control weight</td>
+<td style="text-align: center;">1000</td>
+</tr>
+</tbody>
+</table>
+<p>Here is a link to <a href="./videos/MPC.mp4">my video result</a>.</p>
+<p>I manually tune my parameters. First, elapsed duration is the timing where the control is executed, so I chose 0.1. Next, I tuned weights of the cost function. I print the present state and each cost so that I can find which cost function influences prediction. For examle, if small number of the costs are relatively bigger, it is bad tuning because small number of costs determine the control. Using those information, I could tune weight of the cost function. Finally, I tuned timestep length so the controller can deal with the sharp curve of track.</p>
+<h4 id="here-i-briefly-discuss-how-i-improve-my-program.">4. Here I briefly discuss how I improve my program.</h4>
+<p>There are some ways to improve my program. I can weight the CTE and epsi more if they are nearer the present. This is because the control and state become less certain if those are far from the present. So the nearer the control and state are, the more they influence the prediction. Also, my paramters were tuned so that the car can go around the track as fast as possible. Therefore, the car’s speed is often changed because the throttle control weight and the change of throttle control weight are small. I can tune those parameter so that the speed and energy cosumption are balanced</p>
+</body>
+</html>
